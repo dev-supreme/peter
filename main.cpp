@@ -1,212 +1,108 @@
 #include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
 
-enum _NODETYPE
+const float PI = 3.14159;
+
+typedef struct coordinate {
+	float x;
+	float y;
+	coordinate() { x = y = 0; }
+	coordinate(int x1, int y1)
+	{
+		x = x1;
+		y = y1;
+	}
+}coordinate;
+
+class Circle
 {
-	TWO_NODE,
-	THREE_NODE,
-	FOUR_NODE
+public:
+	Circle(int radius, int x, int y) 
+	{
+		setRadius(radius);
+		this->center.x = x;
+		this->center.y = y;
+	}
+	Circle(int radius, coordinate pos)
+	{
+		setRadius(radius);
+		this->center = pos;
+	}
+	~Circle() {}
+private:
+	int radius;
+	coordinate center;
+
+	void setCenterPos(int x, int y)
+	{
+		this->center.x = x;
+		this->center.y = y;
+	}
+	void setCenterPos(coordinate pos)
+	{
+		setCenterPos(pos.x, pos.y);
+	}
+public:
+	int getRadius()
+	{
+		return radius;
+	}
+	void setRadius(int radius)
+	{
+		if (radius <= 0)
+			radius = 1;
+		if (radius > 100)
+			radius = 100;
+
+		this->radius = radius;
+	}
+	double getArea()
+	{
+		return PI * radius * radius;
+	}
+	
+	void Move(int x, int y)
+	{
+		setCenterPos(this->center.x + x, this->center.y + y);
+	}
+
+	void Move(coordinate pos)
+	{
+		setCenterPos(this->center.x + pos.x, this->center.y + pos.y);
+	}
+
+	void MoveTo(int x, int y)
+	{
+		setCenterPos(x, y);
+	}
+
+	void MoveTo(coordinate pos)
+	{
+		setCenterPos(pos);
+	}
 };
 
-typedef struct _node
+class Triangle
 {
-	int data[3];
-	int nodeType;
-	struct _node* child[4];
-	struct _node* parent;
-}NODE;
+	coordinate point[3];	
+	double getArea;
+};
 
-NODE* createNode(int data)
+class Rectabngle
 {
-	NODE* newNode = (NODE*)malloc(sizeof(NODE));
-	memset(newNode, 0, sizeof(NODE));
-	newNode->data[0] = data;
-
-	return newNode;
-}
-
-int insertNode(NODE** root, int data) 
-{
-	NODE* pNode = *root;
-	if (NULL == pNode)
-	{
-		*root = createNode(data);
-	}
-	else
-	{
-		// search a leaf node
-		while (1)
-		{
-			// consider a path 
-			if (TWO_NODE == pNode->nodeType)
-			{
-				if (NULL == pNode->child[0])
-				{
-					// insert data
-					if (data < pNode->data[0])
-					{
-						// shift
-						pNode->data[1] = pNode->data[0];
-						pNode->data[0] = data;
-					}
-					else if (data > pNode->data[0])
-					{
-						pNode->data[1] = data;
-					}
-					pNode->nodeType = THREE_NODE;
-					break;
-				}
-				else
-				{
-					if (data < pNode->data[0])
-						pNode = pNode->child[0];
-					else if (data > pNode->data[0])
-						pNode = pNode->child[1];
-				}
-				
-			}
-			else if (THREE_NODE == pNode->nodeType)
-			{
-				if (NULL == pNode->child[0])
-				{
-					// insert data
-					if (data < pNode->data[0])
-					{
-						pNode->data[2] = pNode->data[1];
-						pNode->data[1] = pNode->data[0];
-
-						pNode->data[0] = data;
-					}
-					else if (data > pNode->data[0] && data < pNode->data[1])
-					{
-						pNode->data[2] = pNode->data[1];
-
-						pNode->data[1] = data;
-					}					
-					else if (data > pNode->data[1])
-					{
-						pNode->data[2] = data;
-					}
-
-					pNode->nodeType = FOUR_NODE;
-
-					break;
-				}
-				else
-				{
-					if (data < pNode->data[0])
-						pNode = pNode->child[0];
-					else if (data > pNode->data[0] && data < pNode->data[1])
-						pNode = pNode->child[1];
-					else if (data > pNode->data[1])
-						pNode = pNode->child[2];
-				}
-			}
-			else if (FOUR_NODE == pNode->nodeType)
-			{
-				// split
-				if (NULL == pNode->parent)
-				{
-					NODE* newNode1 = createNode(pNode->data[0]);
-					NODE* newNode2 = createNode(pNode->data[2]);
-
-					pNode->nodeType = TWO_NODE;
-					pNode->data[0] = pNode->data[1];
-					pNode->data[1] = pNode->data[2] = 0;
-					pNode->child[0] = newNode1;
-					pNode->child[1] = newNode2;
-
-					newNode1->parent = pNode;
-					newNode2->parent = pNode;						
-				}
-				else
-				{
-					// split implementation
-					if (TWO_NODE == pNode->parent->nodeType)
-					{
-						if (pNode == pNode->parent->child[0])
-						{
-							// shift
-							pNode->parent->data[1] = pNode->parent->data[0];
-							pNode->parent->data[0] = pNode->data[1];
-
-							pNode->parent->child[2] = pNode->parent->child[1];
-							pNode->parent->child[1] = pNode->parent->child[0]; 
-							pNode->parent->nodeType = THREE_NODE;
-
-							// newnode == left
-							NODE* newNode = createNode(pNode->data[0]);
-							newNode->parent = pNode->parent;
-							pNode->parent->child[0] = newNode;
-
-							pNode->nodeType = TWO_NODE;
-
-							if (NULL != pNode->child[0])
-							{
-								newNode->child[0] = pNode->child[0];
-								newNode->child[1] = pNode->child[1];
-								pNode->child[0] = pNode->child[2];
-								pNode->child[1] = pNode->child[3];
-							}
-
-							if (data < pNode->parent->data[0])
-								pNode = pNode->parent->child[0];
-							else if (data > pNode->parent->data[0])
-								pNode = pNode->parent->child[1];
-
-						}
-						else if(pNode == pNode->parent->child[1])
-						{
-							pNode->parent->data[1] = pNode->data[1];
-							pNode->parent->nodeType = THREE_NODE;
-
-							// newnode == right
-							NODE* newNode = createNode(pNode->data[2]);
-							newNode->parent = pNode->parent;
-							pNode->parent->child[2] = newNode;
-
-							pNode->nodeType = TWO_NODE;
-
-							if (NULL != pNode->child[0])
-							{
-								newNode->child[0] = pNode->child[2];
-								newNode->child[1] = pNode->child[3];
-							}
-
-							if (data < pNode->parent->data[1])
-								pNode = pNode->parent->child[1];
-							else if (data > pNode->parent->data[1])
-								pNode = pNode->parent->child[2];
-						}
-					}
-					else if (THREE_NODE == pNode->parent->nodeType)
-					{
-						// need implement
-					}
-
-				}
-			}
-		}		
-	}
+	coordinate point[2];
+	double width;
+	double height;
+	double getArea;
+};
 
 
-	return 0;
-}
 
 int main(void)
 {
-	NODE* root = NULL;
+	Circle one(5, 100, 50);
+	printf("Circle One(radius: %d) Area: %.2f\n", one.radius, one.getArea());
 
-	insertNode(&root, 5);
-	insertNode(&root, 1);
-	insertNode(&root, 19);
-	insertNode(&root, 25);
-	insertNode(&root, 17);
-	insertNode(&root, 22);
-	insertNode(&root, 4);
-
-
-
-	return 0;
+	Circle two(10, coordinate(30, 50));
+	printf("Two area: %.2f\n", two.getArea());
 }
+
